@@ -29,19 +29,21 @@ BotConfiguration = mirai_loader.loadClass("net.mamoe.mirai.utils.BotConfiguratio
 DeviceInfo = mirai_loader.loadClass("net.mamoe.mirai.utils.DeviceInfo")
 AbstractBotConfiguration = mirai_loader.loadClass("net.mamoe.mirai.utils.AbstractBotConfiguration")
 
+global bot
+
 def login():
     cacheDir = File("cache")
-    bot.configuration.fileBasedDeviceInfo(current_directory + "device.json")
+    bot.configuration.fileBasedDeviceInfo(current_directory + "/device.json")
     bot.configuration.protocol = BotConfiguration.MiraiProtocol.ANDROID_WATCH
     class BotEventHandler:
     
         @staticmethod
         def send_message_on_login(event):
             if isinstance(event, BotOnlineEvent):
-                print(u"登录成功，开始发送消息")
                 bot = event.getBot()
                 target_group = bot.getGroup(820819698)  # 替换为您要发送消息的群组的群号
                 target_group.sendMessage(PlainText(u"你好!我拥有生命了!"))
+                send_message_to_group(820819698,u"我拥有生命了!")
 
         @staticmethod
         def reply_to_group_message(event):
@@ -81,3 +83,12 @@ elif (login_type == 'Password'):
     login()
 else:
     print(u"登陆信息错误,请重试")
+    
+def send_message_to_group(group_id, message):
+    target_group = bot.getGroup(group_id)
+    if target_group:
+        print(message)
+        target_group.sendMessage(PlainText(unicode(message, "utf-8")))
+    else:
+        print("未能获取到群实例")
+    
