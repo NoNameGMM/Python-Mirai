@@ -4,6 +4,9 @@ from java.net import URL, URLClassLoader
 from java.util.function import Consumer
 import os
 import json
+import socket
+import threading
+import log
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 bot_file = current_directory + "/bot.json"
@@ -30,6 +33,16 @@ DeviceInfo = mirai_loader.loadClass("net.mamoe.mirai.utils.DeviceInfo")
 AbstractBotConfiguration = mirai_loader.loadClass("net.mamoe.mirai.utils.AbstractBotConfiguration")
 
 global bot
+
+def send_message_to_group(group_id, message):
+    target_group = bot.getGroup(group_id)
+    if target_group:
+        print(message)
+        target_group.sendMessage(PlainText(unicode(message, "utf-8")))
+    else:
+        print(u"未能获取到群实例")
+
+
 
 def login():
     cacheDir = File("cache")
@@ -77,18 +90,15 @@ def login():
 
 if (login_type == 'QRCode'):
     bot = BotFactory.INSTANCE.newBot(bot_id, BotAuthorization.byQRCode())
-    login()
+    thread = threading.Thread(target=login)
+    
+    thread.start()
+    
 elif (login_type == 'Password'):
     bot = BotFactory.INSTANCE.newBot(bot_id, password)
-    login()
+    thread = threading.Thread(target=login)
+    
+    thread.start()
 else:
     print(u"登陆信息错误,请重试")
-    
-def send_message_to_group(group_id, message):
-    target_group = bot.getGroup(group_id)
-    if target_group:
-        print(message)
-        target_group.sendMessage(PlainText(unicode(message, "utf-8")))
-    else:
-        print("未能获取到群实例")
-    
+        

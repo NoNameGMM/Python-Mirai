@@ -3,11 +3,10 @@ import requests
 import zipfile
 from tqdm import tqdm
 import os
-import time
-import subprocess
-from client import create_client
-from server import create_server
+from sockets import *
 import log
+from runbot import *
+import threading
 
 current_directory = os.path.dirname(os.path.realpath(__file__))
 block_size = 1024 
@@ -83,5 +82,45 @@ else:
     log.info("---安装依赖项:Jython---")
     install_jython()
     
-create_server()
-create_client()
+
+current_directory = os.path.dirname(os.path.realpath(__file__))
+os.environ['JAVA_HOME'] = current_directory + '/jdk'
+java_bin_dir = os.path.join(os.environ['JAVA_HOME'], 'bin')
+os.environ['PATH'] = java_bin_dir + os.pathsep + os.environ.get('PATH', '')
+command = current_directory + '/jython/bin/jython.exe' + " " + current_directory + "/mirai.py"
+process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+
+runsocket()
+
+def read_output(process):
+    while True:
+        try:
+            output = process.stdout.readline()
+            if output == b'' and process.poll() is not None:
+                break
+            if output:
+                print(output.decode('gbk', errors='replace').strip())
+        except IOError:
+            break
+
+def send_input():
+    while True:
+        try:
+            user_input = input("")
+            if user_input == "":
+                break
+            send(user_input)
+        except EOFError:
+            break
+        
+output_thread = threading.Thread(target=read_output, args=(process,))
+input_thread = threading.Thread(target=send_input)
+
+output_thread.start()
+input_thread.start()
+
+try:
+    output_thread.join()
+    input_thread.join()
+except KeyboardInterrupt:
+    os._exit(0)
